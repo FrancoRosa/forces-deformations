@@ -1,0 +1,38 @@
+##########################################
+      Software de refraccion Sismica
+##########################################
+El software esta realizado con Python, que es una plataforma de uso libre, de la misma manera el software se provee con esa misma filosofia, que permite a los usuarios hacer las modificaciones que quieran y les dá libertad de compartir el programa
+
+Instrucciones de instalacion en  Windows:
+
+- Instalar python-2.7.14 o superior con las configuraciones por defecto
+
+- Editar las variables de entorno del sistema añadiendo las siguientes direcciones a la etiqueta "Path":
+	C:\Python27;C:\Python27\Scripts;
+
+- Abrir una ventana de comandos dentro de la carpeta que contiene este archivo e insertar los siguientes comandos uno despues de otro:
+	pip install PyQt4-4.11.4-cp27-cp27m-win_amd64.whl
+	pip install numpy‑1.14.0+mkl‑cp27‑cp27m‑win_amd64.whl
+	pip install pyqtgraph-0.10.0-py2.py3-none-any.whl
+	pip install pyserial-2.7-py2-none-any.whl
+	python-2.7.14.amd64.msi
+
+- Una vez instalados los requerimientos anteriores, buscamos en archivo Seismic50KHz.pyw y al hacerle doble click, podremos acceder al software
+
+
+Nota:
+Los archivos y codigo fuente de este proyecto estan disponibles en linea y pueden descargarse de los link que pongo a continuacion:
+	
+	Interprete Python: https://www.python.org/downloads/release/python-2714/
+			python-2.7.14.amd64.msi
+	
+	Modulos Python: https://www.lfd.uci.edu/~gohlke/pythonlibs/
+			PyQt4-4.11.4-cp27-cp27m-win_amd64.whl
+			numpy‑1.14.0+mkl‑cp27‑cp27m‑win_amd64.whl
+			pyqtgraph-0.10.0-py2.py3-none-any.whl
+			pyserial-2.7-py2-none-any.whl
+	
+	Drivers USB para el equipo: https://www.geekfactory.mx/download/driver-ch340-windows/
+			Click en Download
+	
+	Software de refraccion: https://github.com/kilometro115/forces-deformations/master
