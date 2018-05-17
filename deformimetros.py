@@ -5,10 +5,11 @@ from pyqtgraph.Qt import QtGui, QtCore
 import numpy as np
 import pyqtgraph as pg
 import time, serial, csv
-import sys, glob
+import sys, glob, qdarkstyle
 import thread
 ##########################################################
-plotLen =  500#Numero de Muestras totales
+scale = 219.3310    #Escala para Kg
+plotLen =  500		#Numero de Muestras totales
 threshold = 50
 ksamples = 50
 msamples = plotLen/ksamples
@@ -17,7 +18,10 @@ uData=['---.--','---.--','---.--','---.--','---.--','---.--','---.--']
 uDatat =[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 tData = []
 pData = []
+M1=[0,0.01]
+C1=[0,0]
 row = 0
+plotType=0
 ##########################################################
 
 flagLog = False
@@ -48,6 +52,7 @@ def serial_ports():
             s.close()
             result.append(port)
         except (OSError, serial.SerialException):
+        #except:
             pass
     return result
 
@@ -61,7 +66,9 @@ if len(serialPorts)>=1:
                       timeout=0.1)
 # plot array
 def matrixInit():
-    global pData
+    global pData, M1, C1
+    M1 = [0,0.1]
+    C1 = [0,0]
     pData = []
     for i in range(6):
         pData.append([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
@@ -74,6 +81,8 @@ matrixInit()
 #############################
 app = QtGui.QApplication([])
 win = QtGui.QMainWindow()
+app.setStyleSheet(qdarkstyle.load_stylesheet_pyside())
+
 win.setWindowTitle('Compresion Axial y Diagonal')
 pg.setConfigOptions(antialias=True)
 
@@ -83,19 +92,21 @@ win1 = pg.LayoutWidget()
 win.setCentralWidget(win1)
 
 fig2 = pg.PlotWidget(title='<div style="text-align: center;"><span style="color: #FFF; font-size: 13pt;">Micrometros</span></div>')
-fig2.setLabel(axis="bottom",text="Esfuerzo",units="kg")
-fig2.setLabel(axis="left",text="Desplazamiento",units="mm")
-fig2.setLabel(axis="top",text='<span style="color: #FFF; font-size: 12pt;">Deformacion vs Esfuerzo</span>')
+fig2.setLabel(axis="left",text="Deformaciones",units="mm")
+fig2.setLabel(axis="bottom",text="Tiempo",units="s")
+fig2.setLabel(axis="top",text='<span style="color: #FFF; font-size: 12pt;">Deformacion vs Tiempo</span>')
 fig2.setLabel(axis="right",text='-')
 fig2.setYRange(-10.0,10.0);
 fig2.showGrid(x=True, y=True)
+fig2.addLegend()
 
-curve1 = fig2.plot(pen='g',name="M1")
-curve2 = fig2.plot(pen='g',name="M2")
-curve3 = fig2.plot(pen='g',name="M3")
-curve4 = fig2.plot(pen='g',name="M4")
-curve5 = fig2.plot(pen='g',name="M5")
-curve6 = fig2.plot(pen='g',name="M6")
+
+curve1 = fig2.plot(pen=(  0,240,20),name="M1")
+curve2 = fig2.plot(pen=( 40,200,20),name="M2")
+curve3 = fig2.plot(pen=( 80,160,20),name="M3")
+curve4 = fig2.plot(pen=(120,120,20),name="M4")
+curve5 = fig2.plot(pen=(160, 80,20),name="M5")
+curve6 = fig2.plot(pen=(200, 40,20),name="M6")
 
 curve1.setData(pData[0])
 curve2.setData(pData[1])
@@ -103,6 +114,7 @@ curve3.setData(pData[2])
 curve4.setData(pData[3])
 curve5.setData(pData[4])
 curve6.setData(pData[5])
+
 
 textMax = pg.TextItem(html='<div style="text-align: center;"><span style="color: #FF0; font-size: 12pt;">Presione Inicio</span></div>', anchor=(-0.3,1), angle=0, fill=(0, 0, 255, 100))
 fig2.addItem(textMax)
@@ -115,15 +127,16 @@ tab1.setColumnCount(7)
 tab1.setHorizontalHeaderLabels(items)
 
 softlabel = QtGui.QLabel('<div style="text-align: center;"><span style="color: #FFF; font-size: 14pt;">Ensayo de Compresion Axial y Diagonal</span></div>')
-loadlabel = QtGui.QLabel('<div style="text-align: center;"><span style="color: #FF0; font-size: 16pt;">Esfuerzo: %s T</span></div>'%(uData[6]))
+loadlabel = QtGui.QLabel('<div style="text-align: center;"><span style="color: #FF0; font-size: 16pt;">Carga: %s Kg</span></div>'%(uData[6]))
 microlabel = QtGui.QLabel('<div style="text-align: center;"><span style="color: #FF0; font-size: 16pt;">Deformaciones: M1: %s, M2: %s, M3: %s, M4: %s, M5: %s, M6: %s,</span></div>'%(uData[0],uData[1],uData[2],uData[3],uData[4],uData[5]))
 
+
+plotBtn = QtGui.QPushButton('Plot') 
+
 portlabel = QtGui.QLabel("Puerto:")
-geolabel = QtGui.QLabel("Geofono:")
-spelabel = QtGui.QLabel("Frec.:")
-thruDatatesLabel = QtGui.QLabel("Humbral:")
-thresEdit = QtGui.QLineEdit(str(threshold))
-timeLabel = QtGui.QLabel("Duracion: 10ms")
+portSel = QtGui.QComboBox()
+for port in serialPorts:
+    portSel.addItem(port)
 
 rstBtn = QtGui.QPushButton('Reset')
 tareBtn = QtGui.QPushButton('Tare')
@@ -131,32 +144,12 @@ strstpBtn = QtGui.QPushButton('Inicio/Pausa')
 saveBtn = QtGui.QPushButton('Guardar')
 exitBtn = QtGui.QPushButton('Salir')
 
-speedSel = QtGui.QComboBox()
-speedSel.addItem('50KHz')
-speedSel.addItem('25KHz')
-speedSel.addItem('10KHz')
-speedSel.addItem('5KHz')
-#speedSel.addItem('1KHz')
-
-geoSel = QtGui.QComboBox()
-geoSel.addItem('Llegada')
-geoSel.addItem('Salida')
-
-portSel = QtGui.QComboBox()
-for port in serialPorts:
-    portSel.addItem(port)
 
 
 softlabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 loadlabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 microlabel.setAlignment(QtCore.Qt.AlignCenter | QtCore.Qt.AlignVCenter)
 portlabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
-
-
-thresEdit.setMaxLength(3)
-thresEdit.setMaximumSize(QtCore.QSize(0.1 * thresEdit.width(),thresEdit.height()))
-speedSel.setMaximumSize(QtCore.QSize(0.1 * speedSel.width(),speedSel.height()))
-
 
 win.showFullScreen()
 win1.addWidget(softlabel,0,0,1,14)
@@ -168,17 +161,69 @@ win1.nextRow()
 win1.addWidget(fig2,3,0,1,7)
 win1.addWidget(tab1,3,7,1,7)
 win1.nextRow()
-win1.addWidget(portlabel,col=0)
-win1.addWidget(portSel,col=1)
-win1.addWidget(tareBtn,col=2)
-win1.addWidget(rstBtn,col=3)
+win1.addWidget(plotBtn,col=0)
+win1.addWidget(portlabel,col=3)
+win1.addWidget(portSel,col=4)
+win1.addWidget(tareBtn,col=5)
+win1.addWidget(rstBtn,col=6)
 win1.addWidget(strstpBtn,col=11)
 win1.addWidget(saveBtn,col=12)
 win1.addWidget(exitBtn,col=13)
 
-def changeThreshold():
-    global threshold
-    threshold = int(thresEdit.text())
+def plotEvsD():
+    fig2.setTitle(title='<div style="text-align: center;"><span style="color: #FFF; font-size: 13pt;">Carga vs Micrometro M1</span></div>')
+    fig2.setLabel(axis="left",text="Esfuerzo",units="Kg")
+    fig2.setLabel(axis="bottom",text="Deformacion",units="mm")
+    fig2.setLabel(axis="top",text='<span style="color: #FFF; font-size: 12pt;">Esfuerzo vs Deformacion</span>')
+    fig2.setLabel(axis="right",text='-')
+    fig2.setYRange(-10.0,10.0);
+    fig2.showGrid(x=True, y=True)
+    
+    #curve1 = fig2.plot(pen='g',name="M1")
+    curve1.setData(M1,C1)
+    curve2.clear()
+    curve3.clear()
+    curve4.clear()
+    curve5.clear()
+    curve6.clear()
+    
+
+def plotDvsT():
+    fig2.setTitle(title='<div style="text-align: center;"><span style="color: #FFF; font-size: 13pt;">Micrometros M1 - M6</span></div>')
+    fig2.setLabel(axis="left",text="Deformaciones",units="mm")
+    fig2.setLabel(axis="bottom",text="Tiempo",units="s")
+    fig2.setLabel(axis="top",text='<span style="color: #FFF; font-size: 12pt;">Deformacion vs Tiempo</span>')
+    fig2.setLabel(axis="right",ntext='-')
+    fig2.setYRange(-10.0,10.0);
+    fig2.showGrid(x=True, y=True)
+    #curve1 = fig2.plot(pen='g',name="M1")
+    curve2 = fig2.plot(pen=( 40,200,20),name="M2")
+    curve3 = fig2.plot(pen=( 80,160,20),name="M3")
+    curve4 = fig2.plot(pen=(120,120,20),name="M4")
+    curve5 = fig2.plot(pen=(160, 80,20),name="M5")
+    curve6 = fig2.plot(pen=(200, 40,20),name="M6")
+    curve1.setData(pData[0])
+    curve2.setData(pData[1])
+    curve3.setData(pData[2])
+    curve4.setData(pData[3])
+    curve5.setData(pData[4])
+    curve6.setData(pData[5])
+                        
+
+def plotChanger():
+    global plotType
+    print plotType
+    
+    plotType = plotType + 1
+    if plotType>1:
+        plotType=0
+
+    if plotType==0:
+        plotDvsT()
+
+    if plotType==1:
+        plotEvsD()
+
 
 def startstop():
     global flagLog
@@ -189,9 +234,10 @@ def startstop():
         textMax.setHtml('<div style="text-align: center;"><span style="color: #FF0; font-size: 12pt;">...Pausa</span></div>')
 
 def reset():
-    global row,tData,pData
+    global row,tData,pData,flagLog
     matrixInit()
-    textMax.setHtml('<div style="text-align: center;"><span style="color: #FF0; font-size: 12pt;">Presione Inicio</span></div>')
+    #if flagLog:
+    #    textMax.setHtml('<div style="text-align: center;"><span style="color: #FF0; font-size: 12pt;">Presione Inicio</span></div>')
     tab1.clearContents()
     tData = []
     row=0
@@ -204,6 +250,8 @@ def tare():
 def getData():
     global cPort, threshold
     global tData,uDatat,uData,row
+    global plotType, flagLog
+    global C1,M1
     while True:
         try:
             outPut = cPort.readline()
@@ -218,10 +266,13 @@ def getData():
                         else:
                             uData[z]=float(outPut[z])
                             outPut[z] = "%2.2f"%(float(outPut[z])-uDatat[z])
-                    
+                    outPut[6]="%2.1f"%(float(outPut[6])/scale)
                     microlabel.setText('<div style="text-align: center;"><span style="color: #FF0; font-size: 16pt;">Deformaciones: M1: %s, M2: %s, M3: %s, M4: %s, M5: %s, M6: %s,</span></div>'%(outPut[0],outPut[1],outPut[2],outPut[3],outPut[4],outPut[5]))
-                    loadlabel.setText('<div style="text-align: center;"><span style="color: #FF0; font-size: 16pt;">Esfuerzo: %s T</span></div>'%outPut[6])            
+                    loadlabel.setText('<div style="text-align: center;"><span style="color: #FF0; font-size: 16pt;">Carga: %s Kg</span></div>'%outPut[6])            
+                    
                     if flagLog:
+                        M1.append(uData[0])
+                        C1.append(float(outPut[6]))
                         for z in range(len(outPut)):
                             newdata = QtGui.QTableWidgetItem()
                             newdata.setText(outPut[z])
@@ -229,17 +280,22 @@ def getData():
                             if z<6:
                                 pData[z].remove(pData[z][0])
                                 pData[z].append(uData[z]-uDatat[z])
-                        curve1.setData(pData[0])
-                        curve2.setData(pData[1])
-                        curve3.setData(pData[2])
-                        curve4.setData(pData[3])
-                        curve5.setData(pData[4])
-                        curve6.setData(pData[5])
                         
+                        if plotType==0:
+                            curve1.setData(pData[0])
+                            curve2.setData(pData[1])
+                            curve3.setData(pData[2])
+                            curve4.setData(pData[3])
+                            curve5.setData(pData[4])
+                            curve6.setData(pData[5])
+                        
+                        if plotType==1:
+                            curve1.setData(M1,C1)
+                            
                         tData.append(outPut)
                         row = row+1
         except:
-            time.sleep(100)
+            time.sleep(10)
             pass
 
 
@@ -277,7 +333,7 @@ def exit():
     app.quit()
 
 
-
+plotBtn.clicked.connect(plotChanger)
 rstBtn.clicked.connect(reset)    
 tareBtn.clicked.connect(tare)    
 strstpBtn.clicked.connect(startstop)    
