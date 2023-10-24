@@ -1,4 +1,3 @@
-# Forces & deformation datalogger.
+# Forces & Deformation Datalogger
 
-This device is based on the bluepill (Stm32F103, Arduino like card).
-It gets data from 6 Mitutoyo micrometers and a loadcell to make analyces based on forces and deformations 
+This device is built upon the BluePill (STM32F103), an Arduino-like microcontroller board. It collects data from six Mitutoyo micrometers and a load cell to perform analyses related to forces and deformations.
