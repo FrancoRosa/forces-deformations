@@ -10,14 +10,16 @@ Instrucciones de instalacion en  Windows:
 - Instalar python-2.7.14 o superior con las configuraciones por defecto
 
 - Editar las variables de entorno del sistema añadiendo las siguientes direcciones a la etiqueta "Path":
-	C:\Python27;C:\Python27\Scripts;
-
+```
+C:\Python27;C:\Python27\Scripts;
+```
 - Abrir una ventana de comandos dentro de la carpeta que contiene este archivo e insertar los siguientes comandos uno despues de otro:
-	pip install PyQt4==4.11.4
-	pip install numpy==1.14.0
-	pip install pyqtgraph==0.10.0
-	pip install pyserial==2.7
-
+```
+pip install PyQt4==4.11.4
+pip install numpy==1.14.0
+pip install pyqtgraph==0.10.0
+pip install pyserial==2.7
+```
 - Una vez instalados los requerimientos anteriores, buscamos en archivo deformimetros.py y al hacerle doble click, podremos acceder al software
 
 
